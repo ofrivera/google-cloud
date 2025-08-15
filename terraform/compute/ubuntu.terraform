@@ -1,0 +1,43 @@
+# Define a Google Cloud Platform compute instance for Ubuntu
+
+provider "google" {
+  credentials = file("<YOUR-CREDENTIALS-FILE>")
+  project     = "<YOUR-PROJECT-ID>"
+  region      = "<YOUR-REGION>"
+}
+
+resource "google_compute_instance" "ubuntu_vm" {
+  name         = "ubuntu-instance"
+  machine_type = "e2-medium"
+  zone         = "<YOUR-ZONE>"
+
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2004-lts"
+    }
+  }
+
+  network_interface {
+    network = "default"
+    access_config {}
+  }
+
+  metadata = {
+    ssh-keys = "ubuntu:${file("<YOUR-SSH-PUBLIC-KEY-FILE>")}"
+  }
+
+  tags = ["http-server", "https-server"]
+  labels = {
+    environment = "production"
+  }
+
+  scheduling {
+    preemptible       = true
+    on_host_maintenance = "MIGRATE"
+  }
+
+}
+
+output "instance_ip" {
+  value = google_compute_instance.ubuntu_vm.network_interface.0.access_config.0.nat_ip
+}
